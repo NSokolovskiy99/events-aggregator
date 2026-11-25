@@ -2,6 +2,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from events_aggregator.models import SyncMetadata
+from events_aggregator.services.sync import KEY_SYNC_STATUS, STATUS_SUCCESS
 
 
 class SyncMetadataRepositoryImpl:
@@ -20,6 +21,16 @@ class SyncMetadataRepositoryImpl:
         else:
             row.value = value
         await self._session.commit()
+
+    async def reset_running(self) -> None:
+        """Сбрасывает признак идущего синка при старте приложения.
+
+        Под только что поднялся — ни один синк физически не выполняется.
+        Статус 'running' в базе на этот момент — артефакт прошлого пода
+        (деплой пришёлся на окно синка). Без сброса POST /api/sync/trigger
+        вечно отвечает 409.
+        """
+        await self.set(KEY_SYNC_STATUS, STATUS_SUCCESS)
 
     async def try_acquire(self, key: str, value: str) -> bool:
         """Атомарно переводит ключ в value, если он ещё не в этом значении.

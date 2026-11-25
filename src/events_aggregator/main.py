@@ -11,7 +11,7 @@ from sqlalchemy import text
 from events_aggregator.cache import TTLCache
 from events_aggregator.clients.provider_client import EventsProviderClientImpl
 from events_aggregator.config import settings
-from events_aggregator.database import SessionDep
+from events_aggregator.database import AsyncSessionLocal, SessionDep
 from events_aggregator.repositories.event_repo import EventRepositoryImpl
 from events_aggregator.repositories.sync_repo import SyncMetadataRepositoryImpl
 from events_aggregator.repositories.ticket_repo import TicketRepositoryImpl
@@ -53,6 +53,9 @@ async def lifespan(app: FastAPI):
     # Схема БД создаётся миграциями Alembic (см. run.sh), не приложением.
     # В Docker воркер идёт отдельным процессом, поэтому внутри API он
     # стартует только при RUN_WORKER_IN_API=true.
+    async with AsyncSessionLocal() as session:
+        await SyncMetadataRepositoryImpl(session).reset_running()
+        
     if settings.run_worker_in_api:
         start_worker()
     yield
