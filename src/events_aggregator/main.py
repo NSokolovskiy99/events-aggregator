@@ -4,6 +4,7 @@ from typing import Annotated
 from urllib.parse import urlencode
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
@@ -199,3 +200,8 @@ async def domain_error_handler(request: Request, exc: DomainError) -> JSONRespon
     else:
         status = 500
     return JSONResponse(status_code=status, content={"detail": str(exc)})
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    return JSONResponse(status_code=400, content={"detail": exc.errors()})
