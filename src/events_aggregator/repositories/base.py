@@ -1,0 +1,33 @@
+from datetime import datetime
+from typing import Protocol
+
+from events_aggregator.models import Event, Ticket
+
+
+class EventRepository(Protocol):
+    async def get(self, event_id: str) -> Event | None: ...
+    async def upsert(self, data: dict) -> Event: ...
+    async def list(
+        self, date_from: datetime | None, page: int, page_size: int
+    ) -> tuple[int, list[Event]]: ...
+
+
+class TicketRepository(Protocol):
+    async def get(self, ticket_id: str) -> Ticket | None: ...
+    async def create(
+        self,
+        ticket_id: str,
+        event_id: str,
+        first_name: str,
+        last_name: str,
+        email: str,
+        seat: str,
+    ) -> Ticket: ...
+    async def cancel(self, ticket_id: str) -> None: ...
+    async def taken_seats(self, event_id: str) -> set[str]: ...
+
+
+class SyncMetadataRepository(Protocol):
+    async def get(self, key: str) -> str | None: ...
+    async def set(self, key: str, value: str) -> None: ...
+    async def try_acquire(self, key: str, value: str) -> bool: ...

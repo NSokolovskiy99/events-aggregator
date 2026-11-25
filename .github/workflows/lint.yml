@@ -3,23 +3,26 @@ name: CI
 on:
   push:
     branches: [main]
-  pull_request:
+  pull_request:       # Проверка при вливании ветки фичи в главную ветку
     branches: [main]
 
-jobs:
+jobs:                 # Задачи (1 - lint)
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # GitHub поднимает чистую вирт.машину для проверки всего ниже и удалит
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - name: Checkout       # Шаг 1. Забрать код(скачивает на в.машину содержимое репозитория)
+        uses: actions/checkout@v5 # Скрипт-помощник от GitHub(uses - готовые действия из каталога GitHub)
 
-      - name: Install uv
+      - name: Install uv # Шаг 2. Скачивание uv на в.машину
         uses: astral-sh/setup-uv@v6
         with:
-          enable-cache: true
+          enable-cache: true # Кэш пакетов при каждом запуске
 
-      - name: Install dependencies
-        run: uv sync --locked --all-extras --dev
+      - name: Install dependencies # Шаг 3. Установка зависимостей
+        run: uv sync --locked --all-extras --dev  # (версии строго из lock файла, dev - группа pytest, ruff)
 
-      - name: Run Ruff (PEP 8)
-        run: uv run ruff check --output-format=github .
+      - name: Run Ruff (PEP 8) # Шаг 4. Проверка Ruff
+        run: uv run ruff check --output-format=github . # Ошибки будут в pull request на GitHub
+
+      - name: Run tests # Шаг 5. Тесты
+        run: uv run pytest -q # Флаг для короткого итога тестов
