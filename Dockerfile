@@ -26,6 +26,14 @@ RUN uv sync --locked --no-dev
 # uv sync создаёт виртуальное окружение в /app/.venv c активацией окружения
 ENV PATH="/app/.venv/bin:$PATH"
 
+# Непривилегированный пользователь: процессы в контейнере не должны работать от root
+RUN addgroup --system --gid 1000 appuser && \
+    adduser --system --uid 1000 --ingroup appuser appuser
+
+ENV UV_CACHE_DIR=/tmp/uv-cache
+    
+USER appuser
+
 # Не открывает порт наружу. проброска портов в compose(если нужно)
 EXPOSE 8000
 
