@@ -38,6 +38,9 @@ class Settings(BaseSettings):
 
     seats_cache_ttl: int = 30
     sync_daily_at: SyncDailyAt = "03:00"
+    # TTL «замка» синхронизации: если статус running висит дольше, он считается
+    # протухшим (упавший под) и сбрасывается при старте приложения.
+    sync_lock_ttl: int = 3600
 
     # Запускать ли воркер синхронизации внутри процесса API (lifespan).
     # В Docker воркер идёт отдельным процессом (см. run.sh), поэтому там false.

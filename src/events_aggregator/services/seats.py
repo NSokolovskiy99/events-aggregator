@@ -1,7 +1,7 @@
 from events_aggregator.cache import TTLCache
 from events_aggregator.clients.base import EventsProviderClient
+from events_aggregator.enums import EventStatus
 from events_aggregator.repositories.base import EventRepository, TicketRepository
-from events_aggregator.services.constants import PUBLISHED
 from events_aggregator.services.exceptions import EventNotFound, EventUnexpectedStatus
 
 
@@ -24,10 +24,10 @@ class GetSeatsUsecase:
             raise EventNotFound(f"Мероприятие {event_id} не найдено")
         # Провайдер отдаёт 500 с HTML для неопубликованных событий,
         # поэтому валидируем статус на своей стороне.
-        if event.status != PUBLISHED:
+        if event.status != EventStatus.PUBLISHED:
             raise EventUnexpectedStatus(
                 f"Мероприятие {event_id} имеет статус '{event.status}', "
-                f"ожидался '{PUBLISHED}'"
+                f"ожидался '{EventStatus.PUBLISHED}'"
             )
 
         cached = self._cache.get(event_id)

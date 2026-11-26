@@ -1,5 +1,6 @@
 import uuid
 from typing import Any
+from urllib.parse import urljoin
 
 import httpx
 
@@ -10,6 +11,9 @@ from events_aggregator.clients.exceptions import (
 )
 from events_aggregator.clients.mock import MockProviderData
 from events_aggregator.config import settings
+
+# Базовый путь коллекции событий; составные URL собираем через urljoin.
+EVENTS_PATH = "/api/events/"
 
 
 def _error_message(resp: httpx.Response) -> str:
@@ -56,7 +60,7 @@ class EventsProviderClientImpl:
             resp = await self._http.get(url)
         else:
             params = {"changed_at": changed_at} if changed_at else None
-            resp = await self._http.get("/api/events/", params=params)
+            resp = await self._http.get(EVENTS_PATH, params=params)
         resp.raise_for_status()
         return resp.json()
 
@@ -64,7 +68,7 @@ class EventsProviderClientImpl:
         if self._use_mock:
             return self._mock.seats(event_id)
 
-        resp = await self._http.get(f"/api/events/{event_id}/seats/")
+        resp = await self._http.get(urljoin(EVENTS_PATH, f"{event_id}/seats/"))
         resp.raise_for_status()
         return resp.json()["seats"]
 
@@ -75,7 +79,7 @@ class EventsProviderClientImpl:
             return str(uuid.uuid4())
 
         resp = await self._http.post(
-            f"/api/events/{event_id}/register/",
+            urljoin(EVENTS_PATH, f"{event_id}/register/"),
             json={
                 "first_name": first_name,
                 "last_name": last_name,
@@ -101,7 +105,7 @@ class EventsProviderClientImpl:
             return
         resp = await self._http.request(
             "DELETE",
-            f"/api/events/{event_id}/unregister/",
+            urljoin(EVENTS_PATH, f"{event_id}/unregister/"),
             json={"ticket_id": ticket_id},
         )
         resp.raise_for_status()

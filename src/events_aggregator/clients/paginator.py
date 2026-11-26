@@ -15,13 +15,18 @@ class EventsPaginator:
         return self._iterate()
 
     async def _iterate(self) -> AsyncIterator[dict[str, Any]]:
+        async for page in self.pages():
+            for event in page:
+                yield event
+
+    async def pages(self) -> AsyncIterator[list[dict[str, Any]]]:
+        """Отдаёт выдачу страницами — удобно для bulk-обработки и коммита на страницу."""
         next_url: str | None = None
         while True:
             page = await self._client.events(
                 changed_at=self._changed_at, next_url=next_url
             )
-            for event in page.get("results", []):
-                yield event
+            yield page.get("results", [])
             # Контракт: следующая страница — полный URL из поля next
             next_url = page.get("next")
             if not next_url:

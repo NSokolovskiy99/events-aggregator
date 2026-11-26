@@ -10,22 +10,14 @@ from events_aggregator import models  # noqa: F401  (регистрирует т
 from events_aggregator.config import settings
 from events_aggregator.database import Model
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Метаданные моделей для autogenerate.
-target_metadata = Model.metadata
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+target_metadata = Model.metadata
 
 
 def run_migrations_offline() -> None:

@@ -1,12 +1,10 @@
 import pytest
 
+from events_aggregator.enums import SyncStatus
 from events_aggregator.services.exceptions import SyncAlreadyRunning
 from events_aggregator.services.sync import (
     KEY_LAST_CHANGED_AT,
     KEY_SYNC_STATUS,
-    STATUS_ERROR,
-    STATUS_RUNNING,
-    STATUS_SUCCESS,
     SyncEventsUsecase,
 )
 
@@ -34,14 +32,14 @@ async def test_first_sync_uses_initial_changed_at(
     processed = await usecase.do()
 
     assert processed == 1
-    events_repo.upsert.assert_awaited_once_with(
-        {"id": "evt-1", "changed_at": CHANGED_AT_1}
+    events_repo.upsert_many.assert_awaited_once_with(
+        [{"id": "evt-1", "changed_at": CHANGED_AT_1}]
     )
     # первый запрос — с точкой отсчёта из ТЗ (формат даты YYYY-MM-DD)
     provider_client.events.assert_awaited_once_with(
         changed_at="2000-01-01", next_url=None
     )
-    sync_repo.set.assert_any_await(KEY_SYNC_STATUS, STATUS_SUCCESS)
+    sync_repo.set.assert_any_await(KEY_SYNC_STATUS, SyncStatus.SUCCESS)
 
 
 async def test_incremental_sync_uses_last_changed_at(
@@ -70,10 +68,10 @@ async def test_failed_sync_sets_error_status(provider_client, events_repo, sync_
     except RuntimeError:
         pass  # ошибка пробрасывается наверх — так и задумано
 
-    sync_repo.set.assert_any_await(KEY_SYNC_STATUS, STATUS_ERROR)
+    sync_repo.set.assert_any_await(KEY_SYNC_STATUS, SyncStatus.ERROR)
     # «замок» running был захвачен до запроса
-    sync_repo.try_acquire.assert_any_await(KEY_SYNC_STATUS, STATUS_RUNNING)
-    events_repo.upsert.assert_not_called()
+    sync_repo.try_acquire.assert_any_await(KEY_SYNC_STATUS, SyncStatus.RUNNING)
+    events_repo.upsert_many.assert_not_called()
 
 
 async def test_error_status_not_reset_to_success(
@@ -91,7 +89,7 @@ async def test_error_status_not_reset_to_success(
     statuses = [
         c.args[1] for c in sync_repo.set.await_args_list if c.args[0] == KEY_SYNC_STATUS
     ]
-    assert STATUS_SUCCESS not in statuses
+    assert SyncStatus.SUCCESS not in statuses
 
 
 async def test_skips_when_sync_already_running(provider_client, events_repo, sync_repo):

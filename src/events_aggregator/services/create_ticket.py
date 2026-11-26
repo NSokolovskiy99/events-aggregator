@@ -4,8 +4,8 @@ from events_aggregator.clients.exceptions import (
     EmailAlreadyRegistered,
     SeatAlreadyTaken,
 )
+from events_aggregator.enums import EventStatus
 from events_aggregator.repositories.base import EventRepository, TicketRepository
-from events_aggregator.services.constants import PUBLISHED
 from events_aggregator.services.exceptions import (
     DuplicateRegistration,
     EventNotFound,
@@ -14,7 +14,7 @@ from events_aggregator.services.exceptions import (
     SeatUnavailable,
 )
 from events_aggregator.services.seats import GetSeatsUsecase
-from events_aggregator.timeutils import now_utc
+from events_aggregator.timeutils import db_now
 
 
 class CreateTicketUsecase:
@@ -43,14 +43,14 @@ class CreateTicketUsecase:
         event = await self._events.get(event_id)
         if event is None:
             raise EventNotFound(f"Мероприятие {event_id} не найдено")
-        if event.status != PUBLISHED:
+        if event.status != EventStatus.PUBLISHED:
             raise EventUnexpectedStatus(
                 f"Мероприятие {event_id} имеет статус '{event.status}', "
-                f"ожидался '{PUBLISHED}'"
+                f"ожидался '{EventStatus.PUBLISHED}'"
             )
         if (
             event.registration_deadline is not None
-            and now_utc() > event.registration_deadline
+            and db_now() > event.registration_deadline
         ):
             raise RegistrationDeadlinePassed(
                 f"Срок регистрации на мероприятие {event_id} истёк"

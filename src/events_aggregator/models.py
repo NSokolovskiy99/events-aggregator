@@ -12,6 +12,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from events_aggregator.database import Model
+from events_aggregator.enums import EventStatus
 from events_aggregator.timeutils import db_now
 
 
@@ -33,7 +34,7 @@ class Event(Model):
     seats_pattern: Mapped[str | None] = mapped_column(String)  # например "A1-100,B1-50"
     event_time: Mapped[datetime] = mapped_column(DateTime)
     registration_deadline: Mapped[datetime] = mapped_column(DateTime)
-    status: Mapped[str] = mapped_column(String)
+    status: Mapped[EventStatus] = mapped_column(String)
     number_of_visitors: Mapped[int] = mapped_column(default=0)
     changed_at: Mapped[datetime | None] = mapped_column(DateTime)
     synced_at: Mapped[datetime] = mapped_column(DateTime, default=db_now)

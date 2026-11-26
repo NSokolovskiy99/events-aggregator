@@ -3,11 +3,17 @@ from datetime import datetime
 from events_aggregator.repositories.event_repo import EventRepositoryImpl
 
 
+class _FakeResult:
+    rowcount = 1
+
+
 class _FakeSession:
     """Минимальная заглушка AsyncSession для проверки маппинга."""
 
     def __init__(self) -> None:
         self.added: list = []
+        self.executed: list = []
+        self.commits = 0
 
     async def get(self, model, pk):
         return None
@@ -15,8 +21,12 @@ class _FakeSession:
     def add(self, obj) -> None:
         self.added.append(obj)
 
+    async def execute(self, stmt):
+        self.executed.append(stmt)
+        return _FakeResult()
+
     async def commit(self) -> None:
-        pass
+        self.commits += 1
 
 
 def _event_payload() -> dict:
@@ -60,3 +70,25 @@ async def test_upsert_allows_missing_changed_at():
     event = await repo.upsert(payload)
 
     assert event.changed_at is None
+
+
+async def test_upsert_many_uses_single_commit():
+    session = _FakeSession()
+    repo = EventRepositoryImpl(session)
+    second = {**_event_payload(), "id": "evt-2"}
+
+    count = await repo.upsert_many([_event_payload(), second])
+
+    assert count == 2
+    # один bulk-запрос и один коммит на всю страницу
+    assert len(session.executed) == 1
+    assert session.commits == 1
+
+
+async def test_upsert_many_empty_is_noop():
+    session = _FakeSession()
+    repo = EventRepositoryImpl(session)
+
+    assert await repo.upsert_many([]) == 0
+    assert session.executed == []
+    assert session.commits == 0

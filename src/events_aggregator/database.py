@@ -2,6 +2,7 @@ from collections.abc import AsyncGenerator
 from typing import Annotated
 
 from fastapi import Depends
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -17,6 +18,11 @@ AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 class Model(DeclarativeBase):
     pass
+
+
+async def ping(session: AsyncSession) -> None:
+    """Проверяет доступность БД (используется health-эндпоинтом)."""
+    await session.execute(text("SELECT 1"))
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

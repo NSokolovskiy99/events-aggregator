@@ -2,6 +2,12 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from events_aggregator.enums import EventStatus
+
+
+class HealthResponse(BaseModel):
+    status: str
+
 
 class PlaceResponse(BaseModel):
     id: str
@@ -17,8 +23,12 @@ class EventListItem(BaseModel):
     place: PlaceResponse
     event_time: datetime
     registration_deadline: datetime
-    status: str
+    status: EventStatus
     number_of_visitors: int
+
+
+class EventDetailResponse(EventListItem):
+    """Детали мероприятия — та же структура, что и элемент списка."""
 
 
 class EventListResponse(BaseModel):
@@ -26,6 +36,11 @@ class EventListResponse(BaseModel):
     next: str | None = None
     previous: str | None = None
     results: list[EventListItem]
+
+
+class SyncTriggerResponse(BaseModel):
+    status: str
+    processed: int
 
 
 class SeatsResponse(BaseModel):
